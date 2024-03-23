@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+
 import java.util.Map;
 
 @Component
@@ -45,24 +46,58 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
                 case "/current_rate":
                     sendCurrentRates(chatId);
+                    handleSetThresholdCommand(chatId);
                     break;
                 default:
-                    sendMessage(chatId, "Прости, я не понимаю эту команду.");
+                    if (isThresholdSelection(messageText)) {
+                        handleThresholdSelection(chatId, messageText);
+                    } else {
+                        sendMessage(chatId, "Прости, я не понимаю эту команду.");
+                    }
             }
+        }
+    }
+
+    private boolean isThresholdSelection(String messageText) {
+
+        return messageText.contains("3%") || messageText.contains("5%") || messageText.contains("10%") || messageText.contains("15%");
+    }
+
+    private void handleThresholdSelection(long chatId, String threshold) {
+
+        sendMessage(chatId, "Вы выбрали порог изменения курса: " + threshold);
+        switch (threshold) {
+            case "3%":
+
+                sendMessage(chatId, "Вы выбрали порог 3%. Ваши действия для этого порога...");
+                break;
+            case "5%":
+
+                sendMessage(chatId, "Вы выбрали порог 5%. Ваши действия для этого порога...");
+                break;
+            case "10%":
+
+                sendMessage(chatId, "Вы выбрали порог 10%. Ваши действия для этого порога...");
+                break;
+            case "15%":
+
+                sendMessage(chatId, "Вы выбрали порог 15%. Ваши действия для этого порога...");
+                break;
+            default:
+                break;
         }
     }
 
     void sendWelcomeMessage(long chatId, String name) {
         String welcomeMessage = "Здарова, " + name + "! Я бот для отслеживания курсов криптовалют.";
         sendMessage(chatId, welcomeMessage);
+
     }
 
     private void sendCurrentRates(long chatId) {
         Map<String, Double> cryptoPrices = cryptoService.getCryptoPrices();
         StringBuilder message = new StringBuilder("Текущие курсы криптовалют:\n");
-        for (Map.Entry<String, Double> entry : cryptoPrices.entrySet()) {
-            message.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-        }
+        cryptoPrices.forEach((symbol, price) -> message.append(symbol).append(": ").append(price).append("\n"));
         sendMessage(chatId, message.toString());
     }
 
@@ -101,6 +136,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         String messageText = "Выберите порог изменения курса валюты:";
         sendMessageWithKeyboard(chatId, messageText, replyMarkup);
     }
+
 
     private void sendMessageWithKeyboard(long chatId, String textToSend, ReplyKeyboardMarkup keyboardMarkup) {
         SendMessage sendMessage = new SendMessage();
